@@ -36,6 +36,7 @@ let paths = {
     path.join(root, 'index.html')
   ],
   entry: path.join(__dirname, root, 'app/app.js'),
+  entryPage1: path.join(__dirname, root, 'page1/page1.js'),
   output: root,
   blankTemplates: path.join(__dirname, 'generator', 'component/**/*.**')
 };
@@ -68,6 +69,13 @@ gulp.task('serve', () => {
     'webpack-hot-middleware/client?reload=true',
     // application entry point
     paths.entry
+  ];
+  config.entry.page1 = [
+    // this modules required to make HRM working
+    // it responsible for all this webpack magic
+    'webpack-hot-middleware/client?reload=true',
+    // application entry point
+    paths.entryPage1
   ];
 
   var compiler = webpack(config);
