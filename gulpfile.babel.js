@@ -16,42 +16,15 @@ import webpackDevMiddelware from 'webpack-dev-middleware';
 import webpachHotMiddelware from 'webpack-hot-middleware';
 import colorsSupported      from 'supports-color';
 import historyApiFallback   from 'connect-history-api-fallback';
-
-let root = 'client';
-
-// helper method for resolving paths
-let resolveToApp = (glob = '') => {
-  return path.join(root, 'app', glob); // app/{glob}
-};
-
-let resolveToComponents = (glob = '') => {
-  return path.join(root, 'app/components', glob); // app/components/{glob}
-};
-
-// map of all paths
-let paths = {
-  js: resolveToComponents('**/*!(.spec.js).js'), // exclude spec files
-  styl: resolveToApp('**/*.styl'), // stylesheets
-  html: [
-    resolveToApp('**/*.html'),
-    path.join(root, 'index.html')
-  ],
-  entry: [
-    'babel-polyfill',
-    path.join(__dirname, root, 'app/app.js')
-  ],
-  output: root,
-  blankTemplates: path.join(__dirname, 'generator', 'component/**/*.**'),
-  dest: path.join(__dirname, 'dist')
-};
+import { root, paths, resolveToComponents } from './app.config';
 
 // use webpack.config.js to build modules
 gulp.task('webpack', ['clean'], (cb) => {
   const config = require('./webpack.dist.config');
-  config.entry.app = paths.entry;
+  config.entry = paths.entry;
 
   webpack(config, (err, stats) => {
-    if(err)  {
+    if (err) {
       throw new gutil.PluginError("webpack", err);
     }
 
@@ -67,19 +40,24 @@ gulp.task('webpack', ['clean'], (cb) => {
 
 gulp.task('serve', () => {
   const config = require('./webpack.dev.config');
-  config.entry.app = [
-    // this modules required to make HRM working
-    // it responsible for all this webpack magic
-    'webpack-hot-middleware/client?reload=true',
-    // application entry point
-  ].concat(paths.entry);
+  config.entry = paths.entry;
+
+  // Adding webpack middleware to all app entry points
+  for (var eachPath in config.entry) {
+    config.entry[eachPath] = [
+      // this modules required to make HRM working
+      // it responsible for all this webpack magic
+      'webpack-hot-middleware/client?reload=true',
+      // application entry point
+    ].concat(config.entry[eachPath]);
+  }
 
   var compiler = webpack(config);
 
   serve({
     port: process.env.PORT || 3000,
     open: false,
-    server: {baseDir: root},
+    server: { baseDir: root },
     middleware: [
       historyApiFallback(),
       webpackDevMiddelware(compiler, {
